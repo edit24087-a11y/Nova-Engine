@@ -89,13 +89,7 @@ jobs:
         run: /tmp/gradle-8.7/bin/gradle :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build-debug.log
 
       - name: Build Release APK
-        run: |
-          set +e
-          /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/build-release.log
-          EXIT_CODE=${PIPESTATUS[0]}
-          echo "=== Release build output (last 80 lines) ==="
-          tail -80 /tmp/build-release.log
-          exit $EXIT_CODE
+        run: /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/build-release.log
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
