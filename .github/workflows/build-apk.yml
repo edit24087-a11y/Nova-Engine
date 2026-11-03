@@ -88,32 +88,14 @@ jobs:
       - name: Build Debug APK
         run: /tmp/gradle-8.7/bin/gradle :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build-debug.log
 
-      - name: Generate release keystore
+      - name: Build Release APK
         run: |
-          keytool -genkeypair -v \
-            -keystore release.keystore \
-            -alias nova \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass nova-engine-store-pass \
-            -keypass nova-engine-key-pass \
-            -dname "CN=NovaEngine, OU=Dev, O=NovaEngine, L=NA, S=NA, C=US"
-
-      - name: Build Release APK (unsigned)
-        run: /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace
-
-      - name: Sign Release APK
-        run: |
-          APK=app/build/outputs/apk/release/app-release-unsigned.apk
-          OUT=app/build/outputs/apk/release/app-release.apk
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
-            --ks release.keystore \
-            --ks-key-alias nova \
-            --ks-pass pass:nova-engine-store-pass \
-            --key-pass pass:nova-engine-key-pass \
-            --out "$OUT" "$APK"
-
-      - name: Verify Release APK
-        run: $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
+          set +e
+          /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/build-release.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "=== Release build output (last 80 lines) ==="
+          tail -80 /tmp/build-release.log
+          exit $EXIT_CODE
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -126,8 +108,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-debug-log
-          path: /tmp/build-debug.log
+          name: build-release-log
+          path: /tmp/build-release.log
           if-no-files-found: ignore
 
       - name: Upload Release APK
