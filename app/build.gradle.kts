@@ -29,17 +29,15 @@ android {
     }
 
     signingConfigs {
-        // Release signing via keystore.properties (generated in CI or local dev).
-        // If the file doesn't exist, release builds produce unsigned APKs.
-        val ksFile = rootProject.file("keystore.properties")
-        if (ksFile.exists()) {
-            val props = java.util.Properties()
-            props.load(java.io.FileInputStream(ksFile))
+        // Release signing via Gradle project properties (set in CI via -P flags).
+        // If no properties are set, release builds produce unsigned APKs.
+        val ksPassword = findProperty("keystorePassword") as String?
+        if (ksPassword != null) {
             create("release") {
-                storeFile = rootProject.file(props.getProperty("keystore.file", "release.keystore"))
-                storePassword = props.getProperty("keystore.password", "")
-                keyAlias = props.getProperty("key.alias", "nova")
-                keyPassword = props.getProperty("key.password", "")
+                storeFile = file(findProperty("keystoreFile") as String? ?: "release.keystore")
+                storePassword = ksPassword
+                keyAlias = findProperty("keyAlias") as String? ?: "nova"
+                keyPassword = findProperty("keyPassword") as String? ?: ksPassword
             }
         }
     }

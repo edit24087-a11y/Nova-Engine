@@ -98,17 +98,13 @@ jobs:
             -keypass nova-engine-key-pass \
             -dname "CN=NovaEngine, OU=Dev, O=NovaEngine, L=NA, S=NA, C=US"
 
-      - name: Write keystore properties
-        run: |
-          cat > keystore.properties << 'EOF'
-          keystore.file=release.keystore
-          keystore.password=nova-engine-store-pass
-          key.alias=nova
-          key.password=nova-engine-key-pass
-          EOF
-
       - name: Build Release APK
-        run: /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace
+        run: |
+          /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace \
+            -PkeystoreFile="$PWD/release.keystore" \
+            -PkeystorePassword=nova-engine-store-pass \
+            -PkeyAlias=nova \
+            -PkeyPassword=nova-engine-key-pass
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -133,7 +129,12 @@ jobs:
           if-no-files-found: warn
 
       - name: Build Release AAB
-        run: /tmp/gradle-8.7/bin/gradle :app:bundleRelease --no-daemon --stacktrace
+        run: |
+          /tmp/gradle-8.7/bin/gradle :app:bundleRelease --no-daemon --stacktrace \
+            -PkeystoreFile="$PWD/release.keystore" \
+            -PkeystorePassword=nova-engine-store-pass \
+            -PkeyAlias=nova \
+            -PkeyPassword=nova-engine-key-pass
 
       - name: Upload Release AAB
         uses: actions/upload-artifact@v4
