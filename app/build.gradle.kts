@@ -4,15 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-// Read keystore properties for release signing (outside android block so
-// rootProject is directly accessible). Set via -P flags in CI.
-val ksPassword = findProperty("keystorePassword") as String?
-val ksAlias = findProperty("keyAlias") as String? ?: "nova"
-val ksKeyPassword = findProperty("keyPassword") as String? ?: ksPassword
-val ksFile = if (ksPassword != null) {
-    rootProject.file(findProperty("keystoreFile") ?: "release.keystore")
-} else null
-
 android {
     namespace = "com.novaengine.app"
     compileSdk = 34
@@ -37,18 +28,6 @@ android {
         }
     }
 
-    signingConfigs {
-        // Release signing via Gradle project properties (set in CI via -P flags).
-        if (ksFile != null && ksPassword != null) {
-            create("release") {
-                storeFile = ksFile
-                storePassword = ksPassword
-                keyAlias = ksAlias
-                keyPassword = ksKeyPassword
-            }
-        }
-    }
-
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -58,7 +37,6 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
