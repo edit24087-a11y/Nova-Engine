@@ -40,14 +40,35 @@ jobs:
           java-version: 17
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;27.0.12077973
-            cmake;3.22.1
+        run: |
+          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+          export ANDROID_HOME=$ANDROID_SDK_ROOT
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+          # The ubuntu-22.04 runner image has the Android SDK preinstalled.
+          # Download cmdline-tools if sdkmanager is not found.
+          if ! find "$ANDROID_HOME" -name "sdkmanager" -type f 2>/dev/null | grep -q .; then
+            mkdir -p "$ANDROID_HOME/cmdline-tools"
+            curl -fsSL -o /tmp/cmdline-tools.zip \
+              https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
+            mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+
+          SDKMANAGER=$(find "$ANDROID_HOME" -name "sdkmanager" -type f | head -1)
+          echo "$(dirname "$SDKMANAGER")" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+
+          # Accept all SDK licenses
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses > /dev/null 2>&1 || true
+
+          # Install required components: platform 34, build-tools 34, NDK, CMake
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;27.0.12077973" \
+            "cmake;3.22.1"
 
       - name: Generate Gradle wrapper
         run: |
@@ -96,11 +117,10 @@ jobs:
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: warn
 
-      - name: Upload Release AAB
-        run: ./gradlew :app:bundleRelease --no-daemon
-        continue-on-error: true
+      - name: Build Release AAB
+        run: ./gradlew :app:bundleRelease --no-daemon --stacktrace
 
-      - name: Upload AAB artifact
+      - name: Upload Release AAB
         uses: actions/upload-artifact@v4
         with:
           name: nova-engine-release-aab
