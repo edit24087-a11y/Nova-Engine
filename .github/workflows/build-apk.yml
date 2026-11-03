@@ -100,11 +100,16 @@ jobs:
 
       - name: Build Release APK
         run: |
+          set +e
           /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace \
             -PkeystoreFile="$PWD/release.keystore" \
             -PkeystorePassword=nova-engine-store-pass \
             -PkeyAlias=nova \
-            -PkeyPassword=nova-engine-key-pass
+            -PkeyPassword=nova-engine-key-pass 2>&1 | tee /tmp/build-release.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "=== Release build output (last 60 lines) ==="
+          tail -60 /tmp/build-release.log
+          exit $EXIT_CODE
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
