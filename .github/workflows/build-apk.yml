@@ -1,0 +1,107 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, arena/** ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------- core tests
+  build-core:
+    name: Build & Test C++ Core
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ make
+
+      - name: Build and run core test suite
+        run: |
+          chmod +x scripts/build_core.sh
+          ./scripts/build_core.sh
+
+  # ---------------------------------------------------------------- Android APK
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-22.04
+    needs: build-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          ndk-version: "27.0.12077973"
+          cmake-version: "3.22.1"
+
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses > /dev/null 2>&1 || true
+
+      - name: Generate Gradle wrapper
+        run: |
+          curl -fsSL -o /tmp/gradle.zip \
+            https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          /tmp/gradle-8.7/bin/gradle wrapper \
+            --gradle-version 8.7 --distribution-type bin
+
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Generate release keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore release.keystore \
+            -alias nova \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass nova-engine-store-pass \
+            -keypass nova-engine-key-pass \
+            -dname "CN=NovaEngine, OU=Dev, O=NovaEngine, L=NA, S=NA, C=US"
+
+      - name: Write keystore properties
+        run: |
+          cat > keystore.properties << 'EOF'
+          keystore.file=release.keystore
+          keystore.password=nova-engine-store-pass
+          key.alias=nova
+          key.password=nova-engine-key-pass
+          EOF
+
+      - name: Build Release APK
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-engine-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-engine-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: warn
+
+      - name: Upload Release AAB
+        run: ./gradlew :app:bundleRelease --no-daemon
+        continue-on-error: true
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-engine-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: warn
