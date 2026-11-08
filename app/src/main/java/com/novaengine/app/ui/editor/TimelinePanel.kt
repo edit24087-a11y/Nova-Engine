@@ -32,7 +32,7 @@ fun TimelinePanel() {
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.background),
             onDraw = {
-                drawTracks(this)
+                drawTracks()
             },
         )
     }

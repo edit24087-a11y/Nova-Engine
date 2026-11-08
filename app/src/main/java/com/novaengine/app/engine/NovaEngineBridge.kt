@@ -58,66 +58,15 @@ object NovaEngineBridge {
     external fun nativeVersion(): String
 
     // --- helpers -------------------------------------------------------------------
+    // The pure parsing logic lives in NovaParsers (no native dependencies) so it can
+    // be unit-tested on the JVM. These are thin delegations that keep the public API
+    // stable for the rest of the app (EditorViewModel, panels, ...).
 
-    /** Parse "id\tname\ttype\tcolor\tx,y\trot\tsx,sy" into a data row. */
-    fun parseNodeInfo(line: String): NodeInfo? {
-        val parts = line.split("\t")
-        if (parts.size < 7) return null
-        return NodeInfo(
-            id = parts[0].toIntOrNull() ?: 0,
-            name = parts[1],
-            type = parts[2],
-            color = parts[3],
-            posX = parts[4].substringBefore(",").toFloatOrNull() ?: 0f,
-            posY = parts[4].substringAfter(",", "0").toFloatOrNull() ?: 0f,
-            rot = parts[5].toFloatOrNull() ?: 0f,
-            scaleX = parts[6].substringBefore(",").toFloatOrNull() ?: 1f,
-            scaleY = parts[6].substringAfter(",", "1").toFloatOrNull() ?: 1f,
-        )
-    }
+    fun parseNodeInfo(line: String): NovaParsers.NodeInfo? = NovaParsers.parseNodeInfo(line)
+    fun parseTree(dump: String): List<NovaParsers.HierarchyRow> = NovaParsers.parseTree(dump)
+    fun parseStats(packed: Long): NovaParsers.EngineStats = NovaParsers.parseStats(packed)
 
-    data class NodeInfo(
-        val id: Int,
-        val name: String,
-        val type: String,
-        val color: String,
-        val posX: Float,
-        val posY: Float,
-        val rot: Float,
-        val scaleX: Float,
-        val scaleY: Float,
-    )
-
-    /** Parse the hierarchy dump: one "id\tname\ttype\tdepth" per line. */
-    fun parseTree(dump: String): List<HierarchyRow> =
-        dump.lineSequence()
-            .filter { it.isNotBlank() }
-            .mapNotNull { line ->
-                val p = line.split("\t")
-                if (p.size < 4) return@mapNotNull null
-                HierarchyRow(
-                    id = p[0].toIntOrNull() ?: 0,
-                    name = p[1],
-                    type = p[2],
-                    depth = p[3].toIntOrNull() ?: 0,
-                )
-            }
-            .toList()
-
-    data class HierarchyRow(val id: Int, val name: String, val type: String, val depth: Int)
-
-    /** Parse packed 64-bit stats from nativeStats(). */
-    fun parseStats(packed: Long): EngineStats = EngineStats(
-        fps = (packed and 0xFFFF).toInt(),
-        physicsBodies = ((packed ushr 16) and 0xFFFF).toInt(),
-        drawCalls = ((packed ushr 32) and 0xFFFF).toInt(),
-        scriptErrors = ((packed ushr 48) and 0xFFFF).toInt(),
-    )
-
-    data class EngineStats(
-        val fps: Int,
-        val physicsBodies: Int,
-        val drawCalls: Int,
-        val scriptErrors: Int,
-    )
+    typealias NodeInfo = NovaParsers.NodeInfo
+    typealias HierarchyRow = NovaParsers.HierarchyRow
+    typealias EngineStats = NovaParsers.EngineStats
 }
