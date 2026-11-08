@@ -93,13 +93,33 @@ jobs:
           test -x /tmp/gradle-8.7/bin/gradle || { echo "::error::gradle binary not found after download"; exit 1; }
 
       - name: Run unit tests (engine bridge parsing logic)
-        run: /tmp/gradle-8.7/bin/gradle :app:testDebugUnitTest --no-daemon --stacktrace
+        run: |
+          set -eo pipefail
+          /tmp/gradle-8.7/bin/gradle :app:testDebugUnitTest --no-daemon --console=plain --stacktrace 2>&1 | tee /tmp/build.log
 
       - name: Build Debug APK
-        run: /tmp/gradle-8.7/bin/gradle :app:assembleDebug --no-daemon --stacktrace
+        run: |
+          set -eo pipefail
+          /tmp/gradle-8.7/bin/gradle :app:assembleDebug --no-daemon --console=plain --stacktrace 2>&1 | tee -a /tmp/build.log
 
       - name: Build Release APK
-        run: /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace
+        run: |
+          set -eo pipefail
+          /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --console=plain --stacktrace 2>&1 | tee -a /tmp/build.log
+
+      # Surface the actual Gradle error as annotations on failure. The step log
+      # itself is not retrievable from this environment, but ::error:: annotations
+      # are exposed through the Checks API and let us diagnose a red build.
+      - name: Surface build errors (if failed)
+        if: failure()
+        run: |
+          echo "===== BUILD LOG TAIL ====="
+          tail -n 200 /tmp/build.log 2>/dev/null || echo "no build log captured"
+          echo "===== ERROR LINES ====="
+          grep -nE "error:|^e: |What went wrong|BUILD FAILED|Unresolved reference|Exception in|Task .* FAILED|FAILED" /tmp/build.log 2>/dev/null \
+            | tr -d '\r' | tail -80 | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
 
       - name: Verify APK artifacts
         run: |
