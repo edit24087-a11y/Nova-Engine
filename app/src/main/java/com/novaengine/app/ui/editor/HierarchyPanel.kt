@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.novaengine.app.engine.NovaEngineBridge
+import com.novaengine.app.engine.NovaParsers
 
 /** Left panel: scene hierarchy with add/select/delete. */
 @Composable
@@ -70,7 +71,7 @@ fun HierarchyPanel(vm: EditorViewModel) {
 
 @Composable
 private fun HierarchyRow(
-    row: NovaEngineBridge.HierarchyRow,
+    row: NovaParsers.HierarchyRow,
     selected: Boolean,
     onSelect: () -> Unit,
     onDelete: () -> Unit,

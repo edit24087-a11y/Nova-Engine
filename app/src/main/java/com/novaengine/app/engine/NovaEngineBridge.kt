@@ -59,14 +59,11 @@ object NovaEngineBridge {
 
     // --- helpers -------------------------------------------------------------------
     // The pure parsing logic lives in NovaParsers (no native dependencies) so it can
-    // be unit-tested on the JVM. These are thin delegations that keep the public API
-    // stable for the rest of the app (EditorViewModel, panels, ...).
+    // be unit-tested on the JVM. These thin delegations keep the facade stable; the
+    // typed results are the NovaParsers data classes (NovaParsers.NodeInfo,
+    // NovaParsers.HierarchyRow, NovaParsers.EngineStats).
 
     fun parseNodeInfo(line: String): NovaParsers.NodeInfo? = NovaParsers.parseNodeInfo(line)
     fun parseTree(dump: String): List<NovaParsers.HierarchyRow> = NovaParsers.parseTree(dump)
     fun parseStats(packed: Long): NovaParsers.EngineStats = NovaParsers.parseStats(packed)
-
-    typealias NodeInfo = NovaParsers.NodeInfo
-    typealias HierarchyRow = NovaParsers.HierarchyRow
-    typealias EngineStats = NovaParsers.EngineStats
 }

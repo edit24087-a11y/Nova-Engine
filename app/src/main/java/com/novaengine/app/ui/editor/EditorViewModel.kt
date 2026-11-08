@@ -3,6 +3,7 @@ package com.novaengine.app.ui.editor
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.novaengine.app.engine.NovaEngineBridge
+import com.novaengine.app.engine.NovaParsers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,17 +20,17 @@ class EditorViewModel(app: Application) : AndroidViewModel(app) {
     private val _sceneName = MutableStateFlow("")
     val sceneName: StateFlow<String> = _sceneName.asStateFlow()
 
-    private val _hierarchy = MutableStateFlow<List<NovaEngineBridge.HierarchyRow>>(emptyList())
-    val hierarchy: StateFlow<List<NovaEngineBridge.HierarchyRow>> = _hierarchy.asStateFlow()
+    private val _hierarchy = MutableStateFlow<List<NovaParsers.HierarchyRow>>(emptyList())
+    val hierarchy: StateFlow<List<NovaParsers.HierarchyRow>> = _hierarchy.asStateFlow()
 
-    private val _selectedNode = MutableStateFlow<NovaEngineBridge.NodeInfo?>(null)
-    val selectedNode: StateFlow<NovaEngineBridge.NodeInfo?> = _selectedNode.asStateFlow()
+    private val _selectedNode = MutableStateFlow<NovaParsers.NodeInfo?>(null)
+    val selectedNode: StateFlow<NovaParsers.NodeInfo?> = _selectedNode.asStateFlow()
 
     private val _console = MutableStateFlow<List<String>>(emptyList())
     val console: StateFlow<List<String>> = _console.asStateFlow()
 
-    private val _stats = MutableStateFlow(NovaEngineBridge.EngineStats(0, 0, 0, 0))
-    val stats: StateFlow<NovaEngineBridge.EngineStats> = _stats.asStateFlow()
+    private val _stats = MutableStateFlow(NovaParsers.EngineStats(0, 0, 0, 0))
+    val stats: StateFlow<NovaParsers.EngineStats> = _stats.asStateFlow()
 
     fun open(projectPath: String) {
         _projectPath.value = projectPath
