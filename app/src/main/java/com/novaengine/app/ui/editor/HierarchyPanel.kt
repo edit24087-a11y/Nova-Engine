@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,8 +45,9 @@ fun HierarchyPanel(vm: EditorViewModel) {
 
     Column(Modifier.fillMaxSize()) {
         Text(
-            "Hierarchy", style = MaterialTheme.typography.titleMedium,
-            Modifier.padding(12.dp),
+            text = "Hierarchy",
+            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.titleMedium,
         )
         Row(Modifier.padding(12.dp)) {
             IconButton(onClick = { expandDepth = 0 }) {
@@ -87,7 +89,7 @@ private fun HierarchyRow(
             .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
-        Spacer(Modifier.width(row.depth * 16.dp))
+        Spacer(Modifier.width(16.dp * row.depth))
         Icon(
             Icons.Default.ChevronRight, null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
