@@ -82,22 +82,24 @@ jobs:
             "ndk;27.0.12077973" \
             "cmake;3.22.1"
 
-      - name: Provision Gradle 8.7 wrapper
+      - name: Download Gradle 8.7
         run: |
-          curl -fsSL -o /tmp/gradle.zip \
-            https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          for i in 1 2 3; do
+            curl -fsSL -o /tmp/gradle.zip \
+              https://services.gradle.org/distributions/gradle-8.7-bin.zip && break
+            echo "gradle download attempt $i failed, retrying..."; sleep 5
+          done
           unzip -q /tmp/gradle.zip -d /tmp
-          /tmp/gradle-8.7/bin/gradle wrapper --gradle-version 8.7 --no-daemon
-          chmod +x gradlew
+          test -x /tmp/gradle-8.7/bin/gradle || { echo "::error::gradle binary not found after download"; exit 1; }
 
       - name: Run unit tests (engine bridge parsing logic)
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: /tmp/gradle-8.7/bin/gradle :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Build Debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: /tmp/gradle-8.7/bin/gradle :app:assembleDebug --no-daemon --stacktrace
 
       - name: Build Release APK
-        run: ./gradlew :app:assembleRelease --stacktrace
+        run: /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --stacktrace
 
       - name: Verify APK artifacts
         run: |
