@@ -110,18 +110,21 @@ jobs:
           /tmp/gradle-8.7/bin/gradle :app:assembleRelease --no-daemon --console=plain --stacktrace 2>&1 | tee -a /tmp/build.log
 
       # Surface the actual Gradle error as annotations on failure. The step log
-      # itself is not retrievable from this environment, but ::error:: annotations
-      # are exposed through the Checks API and let us diagnose a red build.
+      # blob storage is not reachable from this environment, but ::error::
+      # annotations are exposed through the Checks API. We emit the tail of the
+      # build log split into <=120 char chunks so the full "What went wrong"
+      # body is reconstructable from the annotations (they truncate ~140 chars).
       - name: Surface build errors (if failed)
         if: failure()
         run: |
           echo "===== BUILD LOG TAIL ====="
-          tail -n 200 /tmp/build.log 2>/dev/null || echo "no build log captured"
-          echo "===== ERROR LINES ====="
-          grep -nE "error:|^e: |What went wrong|BUILD FAILED|Unresolved reference|Exception in|Task .* FAILED|FAILED|requires|minCompileSdk|compileSdk|A failure occurred|AAR metadata|Dependency " /tmp/build.log 2>/dev/null \
-            | tr -d '\r' | tail -100 | while IFS= read -r line; do
-              echo "::error::${line}"
+          tail -n 60 /tmp/build.log 2>/dev/null | tr -d '\r' | while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            while [ -n "$line" ]; do
+              echo "::error::${line:0:120}"
+              line="${line:120}"
             done
+          done
 
       - name: Verify APK artifacts
         run: |
