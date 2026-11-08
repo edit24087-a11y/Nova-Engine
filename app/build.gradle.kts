@@ -53,7 +53,7 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose.bom:androidx.compose.bom:2024.06.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
