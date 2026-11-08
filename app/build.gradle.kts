@@ -28,11 +28,6 @@ android {
         }
     }
 
-    signingConfigs {
-        debug {
-        }
-    }
-
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
