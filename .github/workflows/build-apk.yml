@@ -78,7 +78,9 @@ jobs:
 
           "$SDKMANAGER" --sdk_root="$SDK" --install \
             "platforms;android-34" \
+            "platforms;android-35" \
             "build-tools;34.0.0" \
+            "build-tools;35.0.0" \
             "ndk;27.0.12077973" \
             "cmake;3.22.1"
 
@@ -116,8 +118,8 @@ jobs:
           echo "===== BUILD LOG TAIL ====="
           tail -n 200 /tmp/build.log 2>/dev/null || echo "no build log captured"
           echo "===== ERROR LINES ====="
-          grep -nE "error:|^e: |What went wrong|BUILD FAILED|Unresolved reference|Exception in|Task .* FAILED|FAILED" /tmp/build.log 2>/dev/null \
-            | tr -d '\r' | tail -80 | while IFS= read -r line; do
+          grep -nE "error:|^e: |What went wrong|BUILD FAILED|Unresolved reference|Exception in|Task .* FAILED|FAILED|requires|minCompileSdk|compileSdk|A failure occurred|AAR metadata|Dependency " /tmp/build.log 2>/dev/null \
+            | tr -d '\r' | tail -100 | while IFS= read -r line; do
               echo "::error::${line}"
             done
 
