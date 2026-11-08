@@ -111,20 +111,21 @@ jobs:
 
       # Surface the actual Gradle error as annotations on failure. The step log
       # blob storage is not reachable from this environment, but ::error::
-      # annotations are exposed through the Checks API. We emit the tail of the
-      # build log split into <=120 char chunks so the full "What went wrong"
-      # body is reconstructable from the annotations (they truncate ~140 chars).
+      # annotations are exposed through the Checks API. GitHub truncates each
+      # annotation to ~140 chars and caps their number, so we extract only the
+      # "* What went wrong:" cause block (skipping the long Gradle stack trace)
+      # and emit it split into <=120 char chunks.
       - name: Surface build errors (if failed)
         if: failure()
         run: |
-          echo "===== BUILD LOG TAIL ====="
-          tail -n 60 /tmp/build.log 2>/dev/null | tr -d '\r' | while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            while [ -n "$line" ]; do
-              echo "::error::${line:0:120}"
-              line="${line:120}"
+          awk '/\* What went wrong:/{f=1} /\* Exception is:/{f=0} /\* Try:/{f=0} f' /tmp/build.log 2>/dev/null \
+            | tr -d '\r' | head -40 | while IFS= read -r line; do
+              [ -z "$line" ] && continue
+              while [ -n "$line" ]; do
+                echo "::error::${line:0:120}"
+                line="${line:120}"
+              done
             done
-          done
 
       - name: Verify APK artifacts
         run: |
